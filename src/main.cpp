@@ -1065,12 +1065,38 @@ uint256 static GetOrphanRoot(const CBlockHeader* pblock)
 
 int64 static GetBlockValue(int nHeight, int64 nFees)
 {
-    int64 nSubsidy = 400 * COIN;
+    int64 nSubsidy = 400 * COIN + TITHE_AMOUNT;
 
     // Subsidy is cut in half every 840000 blocks, which will occur approximately every 4 years
     nSubsidy >>= (nHeight / 840000); // Hirocoin: 840,000 blocks in ~1.6 years
 
     return nSubsidy + nFees;
+}
+
+CBudget static GetInitialDistributionBudget(int nHeight)
+{
+    static CBitcoinAddress vAddresses[4] = {
+        CBitcoinAddress("15yydiZrSuwAb5QETPTnhPBqBV2fXZe4Sj"),
+        CBitcoinAddress("1556iQbLizzdLD3uAa94L6nqwhTZL4MKXZ"),
+        CBitcoinAddress("1EfEW9ZT1L9Szf6KdJoRFy1qZNVneS5RXQ"),
+        CBitcoinAddress("1BJstbmxUKj3cC12YMSNDrjKhBSskAH9xV")
+    };
+
+    static bool fFirstRun = true;
+    if ( fTestNet && fFirstRun ) {
+        for (int i=0; i<4; ++i)
+            vAddresses[i].ToggleTestnet();
+        fFirstRun = false;
+    }
+
+    static CBudget emptyBudget = CBudget(0, std::vector<CBudgetEntry>());
+
+
+    std::vector<CBudgetEntry> vBudgetEntries;
+    vBudgetEntries.reserve(1);
+    vBudgetEntries.push_back(CBudgetEntry(1, vAddresses[(nHeight*4/EQ_HEIGHT)%4].Get()));
+    mpq qRatio = TITHE_AMOUNT ;
+    return CBudget(qRatio, vBudgetEntries);
 }
 
 static const int64 nTargetTimespan = 24 * 60 * 60; // Hirocoin: 1 day
