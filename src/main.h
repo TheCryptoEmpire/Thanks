@@ -56,6 +56,12 @@ static const int64 DUST_HARD_LIMIT = 1000;   // 0.00001 HIRO mininput
 /** No amount larger than this (in satoshi) is valid */
 static const int64 MAX_MONEY = 672000000 * COIN;
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
+/** Subsidy, demurrage, and budgetary requirements for Globe host currency */
+static const int EQ_HEIGHT = 161280;
+static const mpq TITHE_RATIO = mpq("1/5");
+static const mpq TITHE_AMOUNT = MPQ_MAX_MONEY * TITHE_RATIO / MPQ_MAX_MONEY;
+static const mpq INITIAL_SUBSIDY = mpq("15916928404");
+static const int DEMURRAGE_RATE = 1000000;
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 100;
 /** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
