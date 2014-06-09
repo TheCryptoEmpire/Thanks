@@ -54,6 +54,7 @@ static const int64 DUST_SOFT_LIMIT = 100000; // 0.001 HIRO
 /** Dust Hard Limit, ignored as wallet inputs (mininput default) */
 static const int64 DUST_HARD_LIMIT = 1000;   // 0.00001 HIRO mininput
 /** No amount larger than this (in satoshi) is valid */
+<<<<<<< HEAD
 static const int64 MAX_MONEY = 672000000 * COIN;
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 /** Subsidy, demurrage, and budgetary requirements for Globe host currency */
@@ -62,6 +63,14 @@ static const mpq TITHE_RATIO = mpq("1/5");
 static const mpq TITHE_AMOUNT = MPQ_MAX_MONEY * TITHE_RATIO / MPQ_MAX_MONEY;
 static const mpq INITIAL_SUBSIDY = mpq("15916928404");
 static const int DEMURRAGE_RATE = 1000000;
+=======
+static const int64 I64_MAX_MONEY = 9999999999999999LL;
+static const mpz MPZ_MAX_MONEY = mpz("9999999999999999");
+static const mpq MPQ_MAX_MONEY = mpq("9999999999999999/1");
+inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= I64_MAX_MONEY); }
+inline bool MoneyRange(mpz zValue) { return (zValue >= 0 && zValue <= MPZ_MAX_MONEY); }
+inline bool MoneyRange(mpq qValue) { return (qValue >= 0 && qValue <= MPQ_MAX_MONEY); }
+>>>>>>> afe89fe... Switch the type for representing coin balances from int64 to the GMP library's arbitrary-precision rational number type.
 /** Coinbase transaction outputs can only be spent after this number of new blocks (network rule) */
 static const int COINBASE_MATURITY = 100;
 /** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
@@ -111,8 +120,12 @@ extern unsigned int nCoinCacheSize;
 extern std::map<uint256, CBlock*> mapOrphanBlocks;
 
 // Settings
+<<<<<<< HEAD
 extern int64 nTransactionFee;
 extern int64 nMinimumInputValue;
+=======
+extern mpq nTransactionFee;
+>>>>>>> afe89fe... Switch the type for representing coin balances from int64 to the GMP library's arbitrary-precision rational number type.
 
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64 nMinDiskSpace = 52428800;
@@ -457,12 +470,29 @@ public:
     {
         if (scriptPubKey.size() < 6)
             return "CTxOut(error)";
-        return strprintf("CTxOut(nValue=%"PRI64d".%08"PRI64d", scriptPubKey=%s)", nValue / COIN, nValue % COIN, scriptPubKey.ToString().substr(0,30).c_str());
+        return strprintf("CTxOut(nValue=%s, scriptPubKey=%s)", FormatMoney(nValue).c_str(), scriptPubKey.ToString().substr(0,30).c_str());
     }
 
     void print() const
     {
         printf("%s\n", ToString().c_str());
+    }
+
+    void SetInitialValue(int64 nInitialValue)
+    {
+        nValue = nInitialValue;
+    }
+
+    void SetInitialValue(const mpz &zInitialValue)
+    {
+        nValue = mpz_to_i64(zInitialValue);
+    }
+
+    void SetInitialValue(const mpq &qInitialValue)
+    {
+        const mpq qValue = RoundAbsolute(qInitialValue, ROUND_SIGNAL, 0);
+        const mpz zValue = qValue.get_num() / qValue.get_den();
+        nValue = mpz_to_i64(zValue);
     }
 };
 
@@ -481,8 +511,8 @@ enum GetMinFee_mode
 class CTransaction
 {
 public:
-    static int64 nMinTxFee;
-    static int64 nMinRelayTxFee;
+    static mpq nMinTxFee;
+    static mpq nMinRelayTxFee;
     static const int CURRENT_VERSION=1;
     int nVersion;
     std::vector<CTxIn> vin;
@@ -603,7 +633,7 @@ public:
     /** Amount of bitcoins spent by this transaction.
         @return sum of all outputs (note: does not include fees)
      */
-    int64 GetValueOut() const
+    mpq GetValueOut() const
     {
         int64 nValueOut = 0;
         BOOST_FOREACH(const CTxOut& txout, vout)
@@ -612,7 +642,7 @@ public:
             if (!MoneyRange(txout.nValue) || !MoneyRange(nValueOut))
                 throw std::runtime_error("CTransaction::GetValueOut() : value out of range");
         }
-        return nValueOut;
+        return i64_to_mpq(nValueOut);
     }
 
     /** Amount of bitcoins coming in to this transaction
@@ -622,7 +652,7 @@ public:
         @param[in] mapInputs	Map of previous transactions that have outputs we're spending
         @return	Sum of value of all inputs (scriptSigs)
      */
-    int64 GetValueIn(CCoinsViewCache& mapInputs) const;
+    mpq GetValueIn(CCoinsViewCache& mapInputs) const;
 
     static bool AllowFree(double dPriority)
     {
@@ -631,10 +661,14 @@ public:
         return dPriority > COIN * 576 / 250;
     }
 
+<<<<<<< HEAD
 // Apply the effects of this transaction on the UTXO set represented by view
 void UpdateCoins(const CTransaction& tx, CValidationState &state, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight, const uint256 &txhash);
 
     int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, enum GetMinFee_mode mode=GMF_BLOCK) const;
+=======
+    mpq GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=true, enum GetMinFee_mode mode=GMF_BLOCK) const;
+>>>>>>> afe89fe... Switch the type for representing coin balances from int64 to the GMP library's arbitrary-precision rational number type.
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
@@ -2139,7 +2173,7 @@ struct CCoinsStats
     uint64 nTransactionOutputs;
     uint64 nSerializedSize;
     uint256 hashSerialized;
-    int64 nTotalAmount;
+    mpq nTotalAmount;
 
     CCoinsStats() : nHeight(0), hashBlock(0), nTransactions(0), nTransactionOutputs(0), nSerializedSize(0), hashSerialized(0), nTotalAmount(0) {}
 };
@@ -2248,7 +2282,7 @@ extern CBlockTreeDB *pblocktree;
 struct CBlockTemplate
 {
     CBlock block;
-    std::vector<int64_t> vTxFees;
+    std::vector<mpq> vTxFees;
     std::vector<int64_t> vTxSigOps;
 };
 
