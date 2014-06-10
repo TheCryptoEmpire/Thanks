@@ -4,8 +4,6 @@
 #include <QDialog>
 #include <QString>
 
-#include "bignum.h" // for mpq
-
 namespace Ui {
     class SendCoinsDialog;
 }
@@ -42,7 +40,7 @@ public slots:
     void accept();
     SendCoinsEntry *addEntry();
     void updateRemoveEnabled();
-    void setBalance(const mpq& balance, const mpq& unconfirmedBalance, const mpq& immatureBalance);
+    void setBalance(qint64 balance, qint64 unconfirmedBalance, qint64 immatureBalance);
 
 private:
     Ui::SendCoinsDialog *ui;

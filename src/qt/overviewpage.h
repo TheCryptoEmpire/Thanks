@@ -3,8 +3,6 @@
 
 #include <QWidget>
 
-#include "bignum.h" // for mpq
-
 namespace Ui {
     class OverviewPage;
 }
@@ -31,7 +29,7 @@ public:
     void showOutOfSyncWarning(bool fShow);
 
 public slots:
-    void setBalance(const mpq& balance, const mpq& unconfirmedBalance, const mpq& immatureBalance);
+    void setBalance(qint64 balance, qint64 unconfirmedBalance, qint64 immatureBalance);
 
 signals:
     void transactionClicked(const QModelIndex &index);
@@ -40,9 +38,9 @@ private:
     Ui::OverviewPage *ui;
     ClientModel *clientModel;
     WalletModel *walletModel;
-    mpq currentBalance;
-    mpq currentUnconfirmedBalance;
-    mpq currentImmatureBalance;
+    qint64 currentBalance;
+    qint64 currentUnconfirmedBalance;
+    qint64 currentImmatureBalance;
 
     TxViewDelegate *txdelegate;
     TransactionFilterProxy *filter;

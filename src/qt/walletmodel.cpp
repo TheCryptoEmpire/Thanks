@@ -36,11 +36,7 @@ WalletModel::~WalletModel()
     unsubscribeFromCoreSignals();
 }
 
-<<<<<<< HEAD
 qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
-=======
-mpq WalletModel::getBalance() const
->>>>>>> afe89fe... Switch the type for representing coin balances from int64 to the GMP library's arbitrary-precision rational number type.
 {
     if (coinControl)
     {
@@ -56,12 +52,12 @@ mpq WalletModel::getBalance() const
     return wallet->GetBalance();
 }
 
-mpq WalletModel::getUnconfirmedBalance() const
+qint64 WalletModel::getUnconfirmedBalance() const
 {
     return wallet->GetUnconfirmedBalance();
 }
 
-mpq WalletModel::getImmatureBalance() const
+qint64 WalletModel::getImmatureBalance() const
 {
     return wallet->GetImmatureBalance();
 }
@@ -98,9 +94,9 @@ void WalletModel::pollBalanceChanged()
 
 void WalletModel::checkBalanceChanged()
 {
-    mpq newBalance = getBalance();
-    mpq newUnconfirmedBalance = getUnconfirmedBalance();
-    mpq newImmatureBalance = getImmatureBalance();
+    qint64 newBalance = getBalance();
+    qint64 newUnconfirmedBalance = getUnconfirmedBalance();
+    qint64 newImmatureBalance = getImmatureBalance();
 
     if(cachedBalance != newBalance || cachedUnconfirmedBalance != newUnconfirmedBalance || cachedImmatureBalance != newImmatureBalance)
     {
@@ -141,7 +137,7 @@ bool WalletModel::validateAddress(const QString &address)
 
 WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipient> &recipients, const CCoinControl *coinControl)
 {
-    mpq total = 0;
+    qint64 total = 0;
     QSet<QString> setAddress;
     QString hex;
 
@@ -178,12 +174,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
         return AmountExceedsBalance;
     }
 
-<<<<<<< HEAD
     if((total + nTransactionFee) > nBalance)
-=======
-    mpq qBalReq = total + nTransactionFee;
-    if(qBalReq > getBalance())
->>>>>>> afe89fe... Switch the type for representing coin balances from int64 to the GMP library's arbitrary-precision rational number type.
     {
         return SendCoinsReturn(AmountWithFeeExceedsBalance, nTransactionFee);
     }
@@ -192,7 +183,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
         LOCK2(cs_main, wallet->cs_wallet);
 
         // Sendmany
-        std::vector<std::pair<CScript, mpq> > vecSend;
+        std::vector<std::pair<CScript, int64> > vecSend;
         foreach(const SendCoinsRecipient &rcp, recipients)
         {
             CScript scriptPubKey;
@@ -202,17 +193,13 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
 
         CWalletTx wtx;
         CReserveKey keyChange(wallet);
-        mpq nFeeRequired = 0;
+        int64 nFeeRequired = 0;
         std::string strFailReason;
         bool fCreated = wallet->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, strFailReason, coinControl);
 
         if(!fCreated)
         {
-<<<<<<< HEAD
             if((total + nFeeRequired) > nBalance)
-=======
-            if(qBalReq > wallet->GetBalance())
->>>>>>> afe89fe... Switch the type for representing coin balances from int64 to the GMP library's arbitrary-precision rational number type.
             {
                 return SendCoinsReturn(AmountWithFeeExceedsBalance, nFeeRequired);
             }

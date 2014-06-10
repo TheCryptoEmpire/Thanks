@@ -3,8 +3,6 @@
 
 #include <QWidget>
 
-#include "bignum.h" // for mpq
-
 QT_BEGIN_NAMESPACE
 class QDoubleSpinBox;
 class QValueComboBox;
@@ -23,8 +21,6 @@ public:
 
     qint64 value(bool *valid=0) const;
     void setValue(qint64 value);
-    mpq valueAsMpq(bool *value=0) const;
-    void setValue(const mpq& value);
 
     /** Mark current value as invalid in UI. */
     void setValid(bool valid);

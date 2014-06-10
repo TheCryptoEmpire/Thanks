@@ -25,9 +25,9 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
 {
     QList<TransactionRecord> parts;
     int64 nTime = wtx.GetTxTime();
-    mpq nCredit = wtx.GetCredit(true);
-    mpq nDebit = wtx.GetDebit();
-    mpq nNet = nCredit - nDebit;
+    int64 nCredit = wtx.GetCredit(true);
+    int64 nDebit = wtx.GetDebit();
+    int64 nNet = nCredit - nDebit;
     uint256 hash = wtx.GetHash();
     std::map<std::string, std::string> mapValue = wtx.mapValue;
 
@@ -43,7 +43,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                 TransactionRecord sub(hash, nTime);
                 CTxDestination address;
                 sub.idx = parts.size(); // sequence number
-                sub.credit = i64_to_mpq(txout.nValue);
+                sub.credit = txout.nValue;
                 if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*wallet, address))
                 {
                     // Received by Bitcoin Address
@@ -79,19 +79,17 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
         if (fAllFromMe && fAllToMe)
         {
             // Payment to self
-            mpq nChange = wtx.GetChange();
-            mpq debit = -(nDebit - nChange);
-            mpq credit = nCredit - nChange;
+            int64 nChange = wtx.GetChange();
 
             parts.append(TransactionRecord(hash, nTime, TransactionRecord::SendToSelf, "",
-                                           debit, credit));
+                            -(nDebit - nChange), nCredit - nChange));
         }
         else if (fAllFromMe)
         {
             //
             // Debit
             //
-            mpq nTxFee = nDebit - wtx.GetValueOut();
+            int64 nTxFee = nDebit - wtx.GetValueOut();
 
             for (unsigned int nOut = 0; nOut < wtx.vout.size(); nOut++)
             {
@@ -120,7 +118,7 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                     sub.address = mapValue["to"];
                 }
 
-                mpq nValue = i64_to_mpq(txout.nValue);
+                int64 nValue = txout.nValue;
                 /* Add fee to first output */
                 if (nTxFee > 0)
                 {
@@ -196,7 +194,7 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
     // For generated transactions, determine maturity
     if(type == TransactionRecord::Generated)
     {
-        mpq nCredit = wtx.GetCredit(true);
+        int64 nCredit = wtx.GetCredit(true);
         if (nCredit == 0)
         {
             status.maturity = TransactionStatus::Immature;
